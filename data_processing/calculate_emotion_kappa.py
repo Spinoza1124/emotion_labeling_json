@@ -132,11 +132,11 @@ def create_confusion_matrix(labels):
         
     return confusion_matrices, all_emotions
 
-def visualize_results(kappa, agreement, confusion_matrices, emotions, output_dir):
-    """可视化结果并保存为图像"""
+def visualize_results(kappa, agreement, confusion_matrices, emotions, output_dir, labels):
+    """可视化结果并保存为图像，细分所有样本和达成一致的样本"""
     # 创建一个大的图形
     plt.figure(figsize=(20, 15))
-    gs = GridSpec(2, 3, figure=plt.gcf())
+    gs = GridSpec(3, 3, figure=plt.gcf(), height_ratios=[1, 2, 2])
     
     # 1. 显示总体Kappa值
     ax1 = plt.subplot(gs[0, 0])
@@ -176,6 +176,61 @@ def visualize_results(kappa, agreement, confusion_matrices, emotions, output_dir
         ax.set_title(f'Confusion Matrix: {p1} vs {p2}')
         ax.set_xlabel(f'{p2}\'s labels')
         ax.set_ylabel(f'{p1}\'s labels')
+    
+    # 4. 添加细分图：所有轮次 vs 达成一致的轮次
+    # 识别达成一致的样本
+    agreed_samples = {audio_file: annotations for audio_file, annotations in labels.items()
+                    if len(set(annotations.values())) == 1}
+    
+    # 创建情感分布对比图
+    ax_all = plt.subplot(gs[2, 0:])
+    
+    # 统计所有轮次的情感分布
+    all_emotions_count = {}
+    for annotations in labels.values():
+        for emotion in annotations.values():
+            if emotion not in all_emotions_count:
+                all_emotions_count[emotion] = 0
+            all_emotions_count[emotion] += 1
+    
+    # 统计达成一致的轮次的情感分布
+    agreed_emotions_count = {}
+    for annotations in agreed_samples.values():
+        # 所有标注者给出相同的标签，所以只需取第一个
+        emotion = list(annotations.values())[0]
+        if emotion not in agreed_emotions_count:
+            agreed_emotions_count[emotion] = 0
+        agreed_emotions_count[emotion] += 3  # 三位标注者都选了这个情感
+    
+    # 准备绘图数据
+    all_sorted = sorted(all_emotions_count.items(), key=lambda x: x[1], reverse=True)
+    all_labels = [item[0] for item in all_sorted]
+    all_values = [item[1] for item in all_sorted]
+    
+    agreed_values = []
+    for emotion in all_labels:
+        agreed_values.append(agreed_emotions_count.get(emotion, 0))
+    
+    # 转换为百分比
+    total_all = sum(all_values)
+    total_agreed = sum(agreed_values)
+    all_percent = [v/total_all*100 for v in all_values]
+    agreed_percent = [v/total_agreed*100 if total_agreed > 0 else 0 for v in agreed_values]
+    
+    # 设置X轴位置
+    x = np.arange(len(all_labels))
+    width = 0.35
+    
+    # 创建并排条形图
+    ax_all.bar(x - width/2, all_percent, width, label='All turns')
+    ax_all.bar(x + width/2, agreed_percent, width, label='Reached agreement')
+    
+    # 添加标签和图例
+    ax_all.set_ylabel('Percentage (%)')
+    ax_all.set_title('Emotion Distribution: All Turns vs. Agreed Turns')
+    ax_all.set_xticks(x)
+    ax_all.set_xticklabels(all_labels, rotation=45, ha='right')
+    ax_all.legend()
     
     plt.tight_layout()
     
@@ -250,15 +305,55 @@ def generate_text_report(kappa, agreement, labels, emotion_mapping, output_dir):
         f.write(f"Files with full agreement: {fully_agreed} ({fully_agreed/total_items*100:.1f}%)\n")
         f.write(f"Files with disagreement: {total_items - fully_agreed} ({(total_items - fully_agreed)/total_items*100:.1f}%)\n")
         
-        # 列出每种情感的出现次数
+        # 列出所有轮次的情感分布
         f.write("\nEmotion distribution across all annotators:\n")
         emotion_counts = {emotion: 0 for emotion in emotion_mapping.keys()}
         for annotations in labels.values():
             for emotion in annotations.values():
                 emotion_counts[emotion] += 1
         
+        total_annotations = total_items * 3  # 三人标注
+        f.write("All turns:\n")
         for emotion, count in sorted(emotion_counts.items(), key=lambda x: x[1], reverse=True):
-            f.write(f"  {emotion}: {count} times ({count/(total_items*3)*100:.1f}%)\n")
+            f.write(f"  {emotion}: {count} times ({count/total_annotations*100:.1f}%)\n")
+        
+        # 列出达成一致的轮次的情感分布
+        f.write("\nEmotion distribution in agreed samples:\n")
+        agreed_samples = {audio_file: annotations for audio_file, annotations in labels.items()
+                        if len(set(annotations.values())) == 1}
+        
+        agreed_counts = {emotion: 0 for emotion in emotion_mapping.keys()}
+        for annotations in agreed_samples.values():
+            # 所有标注者给出相同的标签，所以乘3
+            emotion = list(annotations.values())[0]  # 任取一个值，因为都相同
+            agreed_counts[emotion] += 3
+        
+        total_agreed_annotations = len(agreed_samples) * 3  # 三人标注
+        if total_agreed_annotations > 0:
+            for emotion, count in sorted(agreed_counts.items(), key=lambda x: x[1], reverse=True):
+                if count > 0:  # 只显示有数据的情感
+                    f.write(f"  {emotion}: {count} times ({count/total_agreed_annotations*100:.1f}%)\n")
+        else:
+            f.write("  No samples with full agreement found.\n")
+
+def calculate_separate_kappas(labels):
+    """计算 All turns 和 Reached agreement 两种情况的 Kappa 值"""
+    # 1. 计算所有轮次的 Kappa (All turns)
+    all_ratings_matrix, all_emotion_mapping = prepare_data_for_kappa(labels)
+    all_kappa = calculate_kappa(all_ratings_matrix)
+    
+    # 2. 筛选出标注者达成一致的样本
+    agreed_samples = {audio_file: annotations for audio_file, annotations in labels.items()
+                     if len(set(annotations.values())) == 1}
+    
+    # 如果存在达成一致的样本，计算它们的 Kappa
+    if agreed_samples:
+        agreed_ratings_matrix, agreed_emotion_mapping = prepare_data_for_kappa(agreed_samples)
+        agreed_kappa = calculate_kappa(agreed_ratings_matrix)
+    else:
+        agreed_kappa = float('nan')  # 如果没有达成一致的样本，返回 NaN
+    
+    return all_kappa, agreed_kappa
 
 def main():
     # 定义脚本名称和输出目录
@@ -291,6 +386,12 @@ def main():
     print("Calculating Fleiss' Kappa...")
     kappa = calculate_kappa(ratings_matrix)
     
+     # 4.1 额外计算 All turns 和 Reached agreement 的 Kappa
+    print("Calculating separate Kappas for All turns and Reached agreement...")
+    all_kappa, agreed_kappa = calculate_separate_kappas(labels)
+    print(f"All turns Kappa: {all_kappa:.4f}")
+    print(f"Reached agreement Kappa: {agreed_kappa:.4f}")
+    
     # 5. 计算每个类别的一致性
     print("Calculating agreement per category...")
     agreement = calculate_agreement_per_category(labels, emotion_mapping)
@@ -301,13 +402,25 @@ def main():
     
     # 7. 可视化结果
     print("Visualizing results...")
-    visualize_results(kappa, agreement, confusion_matrices, emotions, output_dir)
+    visualize_results(kappa, agreement, confusion_matrices, emotions, output_dir, labels)
     
     # 8. 生成文本报告
     print("Generating text report...")
     generate_text_report(kappa, agreement, labels, emotion_mapping, output_dir)
     
+     # 在文本报告中添加这两个额外的 Kappa 值
+    with open(os.path.join(output_dir, 'kappa_report.txt'), 'a') as f:
+        f.write("\n\nSeparate Kappa Analysis:\n")
+        f.write(f"All turns Kappa: {all_kappa:.4f} ({interpret_kappa(all_kappa)})\n")
+        f.write(f"Reached agreement Kappa: {agreed_kappa:.4f} ({interpret_kappa(agreed_kappa)})\n")
+    
+    # 额外保存为单独的简洁结果文件
+    with open(os.path.join(output_dir, 'kappa_values.txt'), 'w') as f:
+        f.write(f"All turns Kappa: {all_kappa:.4f}\n")
+        f.write(f"Reached agreement Kappa: {agreed_kappa:.4f}\n")
+    
     print(f"Done! Results saved to {output_dir}")
+
 
 if __name__ == "__main__":
     main()

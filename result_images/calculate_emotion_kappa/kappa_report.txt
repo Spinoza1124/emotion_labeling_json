@@ -19,6 +19,7 @@ Files with full agreement: 328 (83.7%)
 Files with disagreement: 64 (16.3%)
 
 Emotion distribution across all annotators:
+All turns:
   neutral: 1060 times (90.1%)
   disgust: 57 times (4.8%)
   angry: 21 times (1.8%)
@@ -27,3 +28,14 @@ Emotion distribution across all annotators:
   fear: 7 times (0.6%)
   sad: 4 times (0.3%)
   undefined: 2 times (0.2%)
+
+Emotion distribution in agreed samples:
+  neutral: 960 times (97.6%)
+  disgust: 15 times (1.5%)
+  angry: 6 times (0.6%)
+  happy: 3 times (0.3%)
+
+
+Separate Kappa Analysis:
+All turns Kappa: 0.3919 (Fair agreement)
+Reached agreement Kappa: 1.0000 (Almost perfect agreement)
