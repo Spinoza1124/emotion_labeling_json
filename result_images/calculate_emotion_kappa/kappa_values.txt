@@ -1,2 +1,0 @@
-All turns Kappa: 0.3919
-Reached agreement Kappa: 1.0000
