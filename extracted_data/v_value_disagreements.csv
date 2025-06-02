@@ -1,0 +1,10 @@
+filename,wav_segment,huangjun_v_value,liuyang_v_value,yuhangbin_v_value,max_difference,username,patient_status,emotion_type
+spk16-3-1_labels.json,spk16-3-1-97.wav,0.0,0.0,-1.0,1.0,黄骏,patient,neutral
+spk16-3-1_labels.json,spk16-3-1-100.wav,0.0,0.0,-1.0,1.0,黄骏,patient,neutral
+spk16-3-1_labels.json,spk16-3-1-85.wav,0.0,0.0,1.0,1.0,黄骏,patient,neutral
+spk16-4-1_labels.json,spk16-4-1-138.wav,0.0,0.0,1.0,1.0,黄骏,patient,neutral
+spk16-4-1_labels.json,spk16-4-1-35.wav,0.0,0.0,-1.0,1.0,黄骏,patient,neutral
+spk16-4-1_labels.json,spk16-4-1-156.wav,0.0,0.5,1.0,1.0,黄骏,patient,neutral
+spk2-3-1_labels.json,spk2-3-1-46.wav,0.0,-1.0,0.0,1.0,黄骏,patient,neutral
+spk2-5-1_labels.json,spk2-5-1-22.wav,0.0,-1.0,-0.5,1.0,黄骏,patient,neutral
+spk2-5-1_labels.json,spk2-5-1-21.wav,0.0,-1.0,-1.5,1.5,黄骏,patient,neutral

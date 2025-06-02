@@ -1,0 +1,29 @@
+情感评分不一致分析摘要报告
+============================================================
+
+分析时间: 2025-05-29 15:16:58
+
+数据概览:
+  - 共同处理的文件数: 10
+  - 总样本数: 822
+
+不一致统计:
+  - A维度评分差距>0.5的样本: 31 (3.77%)
+  - V维度评分差距>0.5的样本: 9 (1.09%)
+  - 总不一致样本: 40
+
+输出文件:
+  - a_value_disagreements.csv: A维度评分差距>0.5的详细样本
+  - v_value_disagreements.csv: V维度评分差距>0.5的详细样本
+
+共同处理的文件列表:
+  1. spk16-1-1_labels.json
+  2. spk16-2-1_labels.json
+  3. spk16-3-1_labels.json
+  4. spk16-4-1_labels.json
+  5. spk16-5-1_labels.json
+  6. spk2-1-1_labels.json
+  7. spk2-2-1_labels.json
+  8. spk2-3-1_labels.json
+  9. spk2-4-1_labels.json
+  10. spk2-5-1_labels.json
